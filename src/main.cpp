@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
-
+#include <FS.h>
 /*
 ESP8266 Blink
 Blink the blue LED on the ESP8266 module
@@ -13,6 +13,8 @@ Blink the blue LED on the ESP8266 module
 /* Put your SSID & Password */
 const char* ssid = "NodeMCU";  // Enter SSID here
 const char* password = "12345678";  //Enter Password here
+
+const char* filename = "/samplefile.txt";
 
 void blink(uint16_t time) {
   digitalWrite(LED, LOW); // Turn the LED on (Note that LOW is the voltage level)
@@ -28,7 +30,7 @@ IPAddress subnet(255,255,255,0);
 
 ESP8266WebServer server(80);
 
-uint8_t LED1pin = D7;
+uint8_t LED1pin = 2;
 bool LED1status = LOW;
 
 uint8_t LED2pin = D6;
@@ -53,18 +55,35 @@ String SendHTML(uint8_t led1stat,uint8_t led2stat){
   ptr +="<h1>ESP8266 Web Server</h1>";
   ptr +="<h3>Using Access Point(AP) Mode</h3>";
   
-   if(led1stat)
-  {ptr +="<p>LED1 Status: ON</p><a class=\"button button-off\" href=\"/led1off\">OFF</a>";}
-  else
-  {ptr +="<p>LED1 Status: OFF</p><a class=\"button button-on\" href=\"/led1on\">ON</a>";}
+  if(led1stat) {
+    ptr +="<p>LED1 Status: ON</p><a class=\"button button-off\" href=\"/led1off\">OFF</a>";
+  } else {
+    ptr +="<p>LED1 Status: OFF</p><a class=\"button button-on\" href=\"/led1on\">ON</a>";
+  }
 
-  if(led2stat)
-  {ptr +="<p>LED2 Status: ON</p><a class=\"button button-off\" href=\"/led2off\">OFF</a>";}
-  else
-  {ptr +="<p>LED2 Status: OFF</p><a class=\"button button-on\" href=\"/led2on\">ON</a>";}
+  if(led2stat) {
+    ptr +="<p>LED2 Status: ON</p><a class=\"button button-off\" href=\"/led2off\">OFF</a>";
+  } else {
+    ptr +="<p>LED2 Status: OFF</p><a class=\"button button-on\" href=\"/led2on\">ON</a>";
+  }
 
-  ptr +="</body>";
-  ptr +="</html>";
+  File f = SPIFFS.open(filename, "r");
+  if (!f) {
+    Serial.println("file open failed");
+  }
+  else
+  {
+      Serial.println("Reading Data from File:");
+      //Data from file
+      for(uint32_t i=0;i<f.size();i++) //Read upto complete file size
+      {
+        ptr += (char)f.read();
+      }
+      f.close();  //Close file
+      Serial.println("File Closed");
+  }
+  ptr +="</body></html>";
+  
   return ptr;
 }
 
@@ -104,7 +123,7 @@ void handle_NotFound(){
 }
 
 void setup() {
-  pinMode(LED, OUTPUT); // Initialize the LED pin as an output
+  //pinMode(LED, OUTPUT); // Initialize the LED pin as an output
   Serial.begin(115200);
   pinMode(LED1pin, OUTPUT);
   pinMode(LED2pin, OUTPUT);
@@ -122,6 +141,42 @@ void setup() {
   
   server.begin();
   Serial.println("HTTP server started");
+
+
+  //Initialize File System
+  if(SPIFFS.begin())
+  {
+    Serial.println("SPIFFS Initialize....ok");
+  }
+  else
+  {
+    Serial.println("SPIFFS Initialization...failed");
+  }
+ 
+  //Format File System
+  if(SPIFFS.format())
+  {
+    Serial.println("File System Formated");
+  }
+  else
+  {
+    Serial.println("File System Formatting Error");
+  }
+
+  //Create New File And Write Data to It
+  //w=Write Open file for writing
+  File f = SPIFFS.open(filename, "w");
+  
+  if (!f) {
+    Serial.println("file open failed");
+  }
+  else
+  {
+      //Write data to file
+      Serial.println("Writing Data to File");
+      f.print("This is sample data which is written in file");
+      f.close();  //Close file
+  }
 }
 
 
@@ -136,5 +191,5 @@ void loop() {
   {digitalWrite(LED2pin, HIGH);}
   else
   {digitalWrite(LED2pin, LOW);}
-  blink(500);
+  //blink(500);
 }
