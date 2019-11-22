@@ -19,7 +19,7 @@
 # Travis CI documentation (see above).
 #
 
-
+ 
 #
 # Template #1: General project. Test it using existing `platformio.ini`.
 #
@@ -33,12 +33,12 @@ cache:
   directories:
     - "~/.platformio"
 
-  install:
-    - pip install -U platformio
-    - platformio update
+install:
+  - pip install -U platformio
+  - platformio update
 
-  script:
-    - platformio run
+script:
+  - platformio run
 
 
 #
